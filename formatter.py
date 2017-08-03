@@ -14,8 +14,12 @@ class ExtendedFormatParser():
     [1]: https://docs.python.org/3/library/string.html#string.Formatter.parse
     """
     def __init__(self):
+        self.reset()
+
+    def reset(self):
         self.code = ''
         self.inx = 0
+        self.out_toks = []
 
     def linebytes(self):
         for line in self.code.splitlines():
@@ -23,9 +27,14 @@ class ExtendedFormatParser():
             yield line.encode('utf-8')
             self.inx += len(line)
 
+    def tokens(self):
+        for t in self.out_toks:
+            yield [t.type, t.string]
+
     def feed(self, code):
+        self.reset()
         self.code = code
-        self.inx = 0
+        print('feed recieved code:', self.code)
 
         tokens = tokenize.tokenize(self.linebytes().__next__)
         first = next(tokens)
@@ -36,6 +45,7 @@ class ExtendedFormatParser():
         # we want to make sure we're actually looking at a format string
         if first.type != tokenize.OP or first.string != '{':
             raise ValueError('First character was not an opening brace!')
+        self.out_toks.append(first)
 
         bracedepth = 0
         out = []
@@ -47,11 +57,25 @@ class ExtendedFormatParser():
                 elif tok.string == '}':
                     bracedepth -= 1
                     if bracedepth < 1:
+                        self.out_toks.append(tok)
+                        ret = tokenize.untokenize(
+                            self.tokens().__iter__()
+                            )[1:-1]
                         ofs = self.inx + tok.end[1]
                         # subtract 2 from index because { and } are falsely
-                        # counted as characters
-                        return self.code[1:ofs - 1], ofs - 2
-            # print(tok)
+                        # counted as characters (see above string slice)
+                        return ret, ofs - 2
+            elif tok.type == tokenize.STRING:
+                if tok.string.find('{') != -1 or tok.string.find('}') != -1:
+                    # FOUND A FORMAT STRING
+                    # WE NEED TO GO DEEEPER
+                    depthformatter = ExtendedFormatter()
+                    tok = tok._replace(string=
+                        depthformatter.format(tok.string))
+            elif tok.type == tokenize.INDENT:
+                print('AN INDENT???')
+                print(tok)
+            self.out_toks.append(tok)
 
         raise SyntaxError('Missing end brace in format string')
 
@@ -106,8 +130,6 @@ class ExtendedFormatter():
         Evaluate several lines of input, returning the result of the last line
 
         from https://stackoverflow.com/a/41472638/5719760
-
-        ALWAYS returns a string
         """
         if expr.find('\n') == -1:
             # no newline
@@ -118,7 +140,7 @@ class ExtendedFormatter():
         # eval the last line and return it
         eval_part = compile(ast.Expression(tree.body[-1].value), 'file', 'eval')
         exec(exec_part, {}, context)
-        return str(eval(eval_part, {}, context))
+        return eval(eval_part, {}, context)
 
     def parse_field(self, field):
         field_txt = ''
@@ -135,7 +157,7 @@ class ExtendedFormatter():
             # except SyntaxError:
                 # raise SyntaxError('Invalid format string: ' + field) from None
 
-        return field_txt
+        return str(field_txt)
 
     def format_and_detect(self, orig_txt):
         """like format() but also returns a true/false value noting whether any
@@ -158,6 +180,7 @@ class ExtendedFormatter():
                 else:
                     # format string, start parsing as code
                     parsed = parser.feed(orig_txt[i - 1:])
+                    print('parsed as:', parsed[0])
                     ret.append(self.parse_field(parsed[0]))
                     [next(txtiter) for x in range(parsed[1])]
             elif c == '}':
@@ -171,7 +194,6 @@ class ExtendedFormatter():
                         'Repeat the brace (`}}`) to insert a literal brace.')
             else:
                 ret.append(c)
-
         return ''.join(ret)
 
     def format(self, txt, vars={}, **kwargs):
