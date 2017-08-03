@@ -149,15 +149,14 @@ class ExtendedFormatter():
 
         if field is not None:
             try:
-                # print('evaluating ', field)
                 field_txt = self.multiline_eval(field,
                     self.env # locals
                 )
             except NameError as e:
                 raise NameError(' '.join(e.args) + '\nEnvironment: \n' +
                     repr(self.env.keys())) from None
-            # except SyntaxError:
-                # raise SyntaxError('Invalid format string: ' + field) from None
+            except SyntaxError:
+                raise SyntaxError('Invalid format string: ' + field) from None
 
         return str(field_txt)
 
