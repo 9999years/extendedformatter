@@ -1,4 +1,4 @@
-from formatter import formatter
+from extendedformatter import formatter, extformat
 
 def format_assert(fstr, val, *vars, **kwargs):
     formatter.reset_env()
@@ -13,7 +13,7 @@ def format_assert(fstr, val, *vars, **kwargs):
 
 
     # try:
-    a = formatter.format(fstr)
+    a = extformat(fstr)
     # except:
         # a = ''
         # failure()
@@ -33,7 +33,7 @@ format_assert('{foo}def', 'abcdef', foo='abc')
 format_assert('start{"mid"}end', 'startmidend')
 # checking string parsing
 # remember to escape braces!
-format_assert('start{"false brace ending}}"}end',
+format_assert('start{"false brace ending}"}end',
     'startfalse brace ending}end')
 # multiline format fields
 format_assert(r'''start{
@@ -59,7 +59,8 @@ format_assert('''factorials of n=1 through n=5:
 {
 ret = ''
 for top in range(1, 6):
-    ret += '{top}! = '
+    # regular f-string within extended format string
+    ret += f'{top}! = '
     fact = 1
     for n in range(top, 0, -1):
         fact *= n
@@ -67,7 +68,8 @@ for top in range(1, 6):
 ret
 }''', '''factorials of n=1 through n=5:
 1! = 1
-1! = 2
-1! = 6
-1! = 24
-1! = 120''')
+2! = 2
+3! = 6
+4! = 24
+5! = 120
+''')

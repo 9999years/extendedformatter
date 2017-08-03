@@ -6,7 +6,7 @@ here = path.abspath(path.dirname(__file__))
 
 setup(
     name='uni2esky',
-    version='0.0.1',
+    version='0.0.4',
 
     description='''F-string literals for non-literal strings.''',
     # rst is some bull shit and i will not be party to it. markdown or die

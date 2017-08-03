@@ -34,7 +34,7 @@ class ExtendedFormatParser():
     def feed(self, code):
         self.reset()
         self.code = code
-        print('feed recieved code:', self.code)
+        # print('feed recieved code:', self.code)
 
         tokens = tokenize.tokenize(self.linebytes().__next__)
         first = next(tokens)
@@ -65,13 +65,13 @@ class ExtendedFormatParser():
                         # subtract 2 from index because { and } are falsely
                         # counted as characters (see above string slice)
                         return ret, ofs - 1
-            elif tok.type == tokenize.STRING:
-                if tok.string.find('{') != -1 or tok.string.find('}') != -1:
-                    # FOUND A FORMAT STRING
-                    # WE NEED TO GO DEEEPER
-                    depthformatter = ExtendedFormatter()
-                    tok = tok._replace(string=
-                        depthformatter.format(tok.string))
+            # elif tok.type == tokenize.STRING:
+                # if tok.string.find('{') != -1 or tok.string.find('}') != -1:
+                    # # FOUND A FORMAT STRING
+                    # # WE NEED TO GO DEEEPER
+                    # depthformatter = ExtendedFormatter()
+                    # tok = tok._replace(string=
+                        # depthformatter.format(tok.string))
             self.out_toks.append(tok)
             # print(tok)
 
@@ -97,7 +97,11 @@ class ExtendedFormatter():
 
     def reset_env(self):
         self.env = {}
-        self.extend_env(extendedformat=self.format)
+        # wrapper
+        def f(s):
+            self.extend_env(locals())
+            return self.format(s)
+        self.extend_env(extformat=f)
 
     def invalidate_cache(self):
         self.cache = {}
@@ -178,7 +182,7 @@ class ExtendedFormatter():
                 else:
                     # format string, start parsing as code
                     parsed = parser.feed(orig_txt[i:])
-                    print('parsed as:', parsed[0])
+                    # print('parsed as:', parsed[0])
                     ret.append(self.parse_field(parsed[0]))
                     [next(txtiter) for x in range(parsed[1])]
             elif c == '}':
@@ -211,5 +215,4 @@ class ExtendedFormatter():
         return ret
 
 formatter = ExtendedFormatter()
-
-format = formatter.format
+extformat = formatter.format
