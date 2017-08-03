@@ -29,11 +29,13 @@ class ExtendedFormatParser():
 
         tokens = tokenize.tokenize(self.linebytes().__next__)
         first = next(tokens)
+        # we don't want to stuff `utf-8` at the start of every eval string
         if first.type != tokenize.ENCODING:
             raise ValueError('First token was not encoding!')
         first = next(tokens)
+        # we want to make sure we're actually looking at a format string
         if first.type != tokenize.OP or first.string != '{':
-            raise ValueError('Second token was not an opening brace!')
+            raise ValueError('First character was not an opening brace!')
 
         bracedepth = 0
         out = []
@@ -51,14 +53,15 @@ class ExtendedFormatParser():
                         return self.code[1:ofs - 1], ofs - 2
             # print(tok)
 
-        raise ValueError('Missing end brace?')
+        raise SyntaxError('Missing end brace in format string')
 
 class ExtendedFormatter():
-    def __init__(self, **kwargs):
+    def __init__(self, depth=0, **kwargs):
         # generic parts
         self.env       = kwargs
         self.saved_env = kwargs
         self.cache     = {}
+        self.depth = depth
 
     def save_env(self):
         self.saved_env = self.env.copy()
@@ -72,6 +75,7 @@ class ExtendedFormatter():
 
     def reset_env(self):
         self.env = {}
+        self.extend_env(extendedformat=self.format)
 
     def invalidate_cache(self):
         self.cache = {}
@@ -100,7 +104,10 @@ class ExtendedFormatter():
     def multiline_eval(self, expr, context):
         """
         Evaluate several lines of input, returning the result of the last line
+
         from https://stackoverflow.com/a/41472638/5719760
+
+        ALWAYS returns a string
         """
         if expr.find('\n') == -1:
             # no newline
@@ -111,7 +118,7 @@ class ExtendedFormatter():
         # eval the last line and return it
         eval_part = compile(ast.Expression(tree.body[-1].value), 'file', 'eval')
         exec(exec_part, {}, context)
-        return eval(eval_part, {}, context)
+        return str(eval(eval_part, {}, context))
 
     def parse_field(self, field):
         field_txt = ''
@@ -130,15 +137,13 @@ class ExtendedFormatter():
 
         return field_txt
 
+    def format_and_detect(self, orig_txt):
+        """like format() but also returns a true/false value noting whether any
+        replacements were detected / made
 
-    def format(self, txt, **kwargs):
-        """no you cant pass `txt` as a kwarg stop asking"""
-        # narrator: nobody ever asked
+        useful for recursion, don't call it directly
 
-        self.save_env()
-        self.extend_env(kwargs)
-
-        orig_txt = '\n'.join(txt) if isinstance(txt, list) else txt
+        this recurses!"""
         ret = [] # list of characters / tokens
 
         parser = ExtendedFormatParser()
@@ -155,13 +160,34 @@ class ExtendedFormatter():
                     parsed = parser.feed(orig_txt[i - 1:])
                     ret.append(self.parse_field(parsed[0]))
                     [next(txtiter) for x in range(parsed[1])]
+            elif c == '}':
+                i, nexttok = next(txtiter)
+                if nexttok == '}':
+                    # literal brace
+                    ret.append('}')
+                else:
+                    # bad news buddy
+                    raise SyntaxError('Illegal unmatched closing brace. '
+                        'Repeat the brace (`}}`) to insert a literal brace.')
             else:
                 ret.append(c)
 
-        # parser.feed(orig_txt)
+        return ''.join(ret)
+
+    def format(self, txt, vars={}, **kwargs):
+        """no you cant pass `txt` as a kwarg stop asking"""
+        # narrator: nobody ever asked
+
+        self.save_env()
+        vars.update(kwargs)
+        self.extend_env(vars)
+
+        orig_txt = '\n'.join(txt) if isinstance(txt, list) else txt
+
+        ret = self.format_and_detect(orig_txt)
 
         self.restore_env()
 
-        return ''.join(ret)
+        return ret
 
 formatter = ExtendedFormatter()
