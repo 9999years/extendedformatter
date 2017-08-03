@@ -33,6 +33,16 @@ those strings, the user can execute anything they want — remember that multili
 expressions are allowed, with the only requirement being that the last
 expression is casted to a string. You were warned!
 
+# Usage
+
+    >>> from extendedformatter import extformat
+    >>> extformat('''sum of numbers 1 through 100: {
+    ... sum = 0
+    ... for x in range(101):
+    ...     sum += x
+    ... sum}''')
+    'sum of numbers 1 through 100: 5050'
+
 # Features
 
 This module is an extension to and a reimplementation of Python’s `f`-strings.

@@ -5,10 +5,10 @@ from os import path
 here = path.abspath(path.dirname(__file__))
 
 setup(
-    name='uni2esky',
-    version='0.0.1',
+    name='extendedformatter',
+    version='0.0.2',
 
-    description='''F-string literals for non-literal strings.''',
+    description='''f-string literals for non-literal strings.''',
     # rst is some bull shit and i will not be party to it. markdown or die
     long_description='https://github.com/9999years/extendedformatter/blob/master/readme.md',
     url='https://github.com/9999years/extendedformatter',
