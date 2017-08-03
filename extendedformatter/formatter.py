@@ -106,8 +106,6 @@ class ExtendedFormatter():
         Evaluate several lines of input, returning the result of the last line
 
         from https://stackoverflow.com/a/41472638/5719760
-
-        ALWAYS returns a string
         """
         if expr.find('\n') == -1:
             # no newline
@@ -125,15 +123,14 @@ class ExtendedFormatter():
 
         if field is not None:
             try:
-                # print('evaluating ', field)
                 field_txt = self.multiline_eval(field,
                     self.env # locals
                 )
             except NameError as e:
                 raise NameError(' '.join(e.args) + '\nEnvironment: \n' +
                     repr(self.env.keys())) from None
-            # except SyntaxError:
-                # raise SyntaxError('Invalid format string: ' + field) from None
+            except SyntaxError:
+                raise SyntaxError('Invalid format string: ' + field) from None
 
         return field_txt
 
@@ -191,4 +188,4 @@ class ExtendedFormatter():
         return ret
 
 formatter = ExtendedFormatter()
-extformat = Formatter.format
+extformat = formatter.format

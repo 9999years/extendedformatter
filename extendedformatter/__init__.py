@@ -1,1 +1,1 @@
-from extendedformat.formatter import *
+from extendedformatter.formatter import *

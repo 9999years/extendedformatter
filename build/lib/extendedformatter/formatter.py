@@ -191,3 +191,4 @@ class ExtendedFormatter():
         return ret
 
 formatter = ExtendedFormatter()
+extformat = Formatter.format
