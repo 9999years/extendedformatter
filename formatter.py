@@ -41,13 +41,13 @@ class ExtendedFormatParser():
         # we don't want to stuff `utf-8` at the start of every eval string
         if first.type != tokenize.ENCODING:
             raise ValueError('First token was not encoding!')
-        first = next(tokens)
+        # first = next(tokens)
         # we want to make sure we're actually looking at a format string
-        if first.type != tokenize.OP or first.string != '{':
-            raise ValueError('First character was not an opening brace!')
-        self.out_toks.append(first)
+        # if first.type != tokenize.OP or first.string != '{':
+            # raise ValueError('First character was not an opening brace!')
+        # self.out_toks.append(first)
 
-        bracedepth = 0
+        bracedepth = 1
         out = []
         line_offset = 0
         for tok in tokens:
@@ -60,11 +60,11 @@ class ExtendedFormatParser():
                         self.out_toks.append(tok)
                         ret = tokenize.untokenize(
                             self.tokens().__iter__()
-                            )[1:-1]
+                            )[:-1]
                         ofs = self.inx + tok.end[1]
                         # subtract 2 from index because { and } are falsely
                         # counted as characters (see above string slice)
-                        return ret, ofs - 2
+                        return ret, ofs - 1
             elif tok.type == tokenize.STRING:
                 if tok.string.find('{') != -1 or tok.string.find('}') != -1:
                     # FOUND A FORMAT STRING
@@ -72,10 +72,8 @@ class ExtendedFormatParser():
                     depthformatter = ExtendedFormatter()
                     tok = tok._replace(string=
                         depthformatter.format(tok.string))
-            elif tok.type == tokenize.INDENT:
-                print('AN INDENT???')
-                print(tok)
             self.out_toks.append(tok)
+            # print(tok)
 
         raise SyntaxError('Missing end brace in format string')
 
@@ -179,7 +177,7 @@ class ExtendedFormatter():
                     ret.append('{')
                 else:
                     # format string, start parsing as code
-                    parsed = parser.feed(orig_txt[i - 1:])
+                    parsed = parser.feed(orig_txt[i:])
                     print('parsed as:', parsed[0])
                     ret.append(self.parse_field(parsed[0]))
                     [next(txtiter) for x in range(parsed[1])]
