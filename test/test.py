@@ -55,12 +55,14 @@ format_assert('{\'don\\\x27t actually do this ever\'}',
 # literal braces
 format_assert('{{ }}', '{ }')
 # nesting, and a practical (?) application
+# note that you do have to pass format variables in as keyword arguments
+# (or locals()) if you prefer
 format_assert('''factorials of n=1 through n=5:
 {
 ret = ''
 for top in range(1, 6):
     # regular f-string within extended format string
-    ret += f'{top}! = '
+    ret += extformat('{top}! = ', top=top)
     fact = 1
     for n in range(top, 0, -1):
         fact *= n
@@ -73,3 +75,9 @@ ret
 4! = 24
 5! = 120
 ''')
+# triple nesting
+# this is 5 factorial
+# dont do this
+format_assert(
+"""{ 5 * int(extformat('{4 * 3 * int(extformat("{int(6 / 3)}"))}'))} = 120""", 
+'120 = 120')

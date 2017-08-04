@@ -98,10 +98,7 @@ class ExtendedFormatter():
     def reset_env(self):
         self.env = {}
         # wrapper
-        def f(s):
-            self.extend_env(locals())
-            return self.format(s)
-        self.extend_env(extformat=f)
+        self.extend_env(extformat=self.format)
 
     def invalidate_cache(self):
         self.cache = {}
