@@ -6,7 +6,7 @@ here = path.abspath(path.dirname(__file__))
 
 setup(
     name='extendedformatter',
-    version='0.0.4',
+    version='0.0.5',
 
     description='''f-string literals for non-literal strings.''',
     # rst is some bull shit and i will not be party to it. markdown or die
