@@ -25,6 +25,16 @@ strings — a bridge between having an end-user write a whole Python file and
 being able to expose a pretty and simple public API with the option to expand
 into arbitrary Python code.
 
+Other languages have similar features to what I offer (sans, AFAIK, arbitrary
+string evaluation): PowerShell has [`"$(expr)"`][powershellexpr], Ruby has
+[`"#{expr}"`][rubyexpr], and Perl has [`"@{[expr]}"`][perlexpr], but Python is
+left out, with only the limited offerings of `f`-strings!
+
+This module is an extension to and a reimplementation of Python’s `f`-strings.
+It allows treating arbitrary expressions as `f`-strings as well as extending
+their syntax, allowing comments, multiple expressions (using the last one,
+casted to a string, as the result), and nesting.
+
 # Understand the risks
 
 I won’t beat around the bush: This module **pivots** around evaluating and
@@ -45,18 +55,8 @@ expression is casted to a string. You were warned!
 
 # Features
 
-This module is an extension to and a reimplementation of Python’s `f`-strings.
-It allows treating arbitrary expressions as `f`-strings as well as extending
-their syntax, allowing comments, multiple expressions (using the last one,
-casted to a string, as the result), and nesting.
-
-Other languages have similar features to what I offer (sans, AFAIK, arbitrary
-string evaluation): PowerShell has [`"$(expr)"`][powershellexpr], Ruby has
-[`"#{expr}"`][rubyexpr], and Perl has [`"@{[expr]}"`][perlexpr], but Python is
-left out, with only the limited offerings of `f`-strings!
-
-As of the time of this writing, everything but nesting works! I think that’s
-pretty fantastic for about 120 SLOC!
+As of the time of this writing, everything but format / conversion specs work! I
+think that’s pretty fantastic for about 120 SLOC!
 
 [strformat]: https://docs.python.org/3/library/stdtypes.html#str.format
 [fstring]: https://docs.python.org/3/reference/lexical_analysis.html#f-strings
