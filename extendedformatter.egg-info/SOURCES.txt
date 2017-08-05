@@ -1,8 +1,0 @@
-setup.py
-extendedformatter/__init__.py
-extendedformatter/formatter.py
-extendedformatter.egg-info/PKG-INFO
-extendedformatter.egg-info/SOURCES.txt
-extendedformatter.egg-info/dependency_links.txt
-extendedformatter.egg-info/top_level.txt
-test/test.py
