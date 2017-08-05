@@ -35,6 +35,10 @@ It allows treating arbitrary expressions as `f`-strings as well as extending
 their syntax, allowing comments, multiple expressions (using the last one,
 casted to a string, as the result), and nesting.
 
+    >>> from extendedformatter import extformat
+    >>> extformat('{"ok".center(30)}')
+    '              ok              '
+
 # Understand the risks
 
 I won’t beat around the bush: This module **pivots** around evaluating and
@@ -55,8 +59,17 @@ expression is casted to a string. You were warned!
 
 # Features
 
-As of the time of this writing, everything but format / conversion specs work! I
+As of the time of this writing, everything but format specs works! I
 think that’s pretty fantastic for about 120 SLOC!
+
+# Conversion Specs
+
+Extendedformatter doesn't (yet!) support format specs, but it does support
+conversion specs; a conversion spec is parsed when the format field ends with an
+`!` and then one or more alphanumeric characters (ASCII only, codepoint ∈ [0x30,
+0x39] U [0x41, 0x5a] U [0x61, 0x7a]). Want to end your format string with
+`!expr`? Just wrap the expression in parens or add a space after the bang;
+`!(expr)` and `! expr` aren't considered format strings.
 
 [strformat]: https://docs.python.org/3/library/stdtypes.html#str.format
 [fstring]: https://docs.python.org/3/reference/lexical_analysis.html#f-strings

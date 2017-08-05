@@ -23,6 +23,8 @@ def format_assert(fstr, val, *vars, **kwargs):
     else:
         failure()
 
+formatter.width = 30
+
 # possible astral codepoint counting bugs
 format_assert('fire {" 🔥"} fire', 'fire  🔥 fire')
 # possible astral codepoint counting bugs
@@ -81,3 +83,16 @@ ret
 format_assert(
 """{ 5 * int(extformat('{4 * 3 * int(extformat("{int(6 / 3)}"))}'))} = 120""", 
 '120 = 120')
+
+# print(formatter.get_specs('abc!def'))
+assert(formatter.get_specs('abc!def') == ('abc', 'def'))
+# print(formatter.get_specs('!(foo)'))
+assert(formatter.get_specs('!(foo)') == ('!(foo)', ''))
+assert(formatter.get_specs('') == ('', ''))
+assert(formatter.get_specs('foo!') == ('foo!', ''))
+assert(formatter.get_specs('!foo') == ('', 'foo'))
+assert(formatter.get_specs('\'foo\'!bar') == ('\'foo\'', 'bar'))
+
+format_assert('''{'abc'!u}''', 'ABC')
+format_assert('''{'abc'!r}''', '                           abc')
+format_assert('''{'title casing words'!t}''', 'Title Casing Words')

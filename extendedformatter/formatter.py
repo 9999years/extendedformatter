@@ -34,7 +34,6 @@ class ExtendedFormatParser():
     def feed(self, code):
         self.reset()
         self.code = code
-        # print('feed recieved code:', self.code)
 
         tokens = tokenize.tokenize(self.linebytes().__next__)
         first = next(tokens)
@@ -73,7 +72,6 @@ class ExtendedFormatParser():
                     # tok = tok._replace(string=
                         # depthformatter.format(tok.string))
             self.out_toks.append(tok)
-            # print(tok)
 
         raise SyntaxError('Missing end brace in format string')
 
@@ -83,7 +81,15 @@ class ExtendedFormatter():
         self.env       = kwargs
         self.saved_env = kwargs
         self.cache     = {}
-        self.depth = depth
+        self.width = 80
+        self.conversions = {
+            'c': lambda x: x.center(self.width),
+            'r': lambda x: x.rjust(self.width),
+            'l': lambda x: x.lower(),
+            'u': lambda x: x.upper(),
+            't': string.capwords, # for [t]itlecase
+        }
+
 
     def save_env(self):
         self.saved_env = self.env.copy()
@@ -104,25 +110,41 @@ class ExtendedFormatter():
         self.cache = {}
 
     def convert_field(self, field, spec):
-        # look, the builtin modes
-        # [r]epr
-        # [s]tr
-        # and [a]scii
-        # are very uninteresting, so im cutting them out
-        conversion_mapping = {
-            'c': misc.center,
-            'r': misc.right,
-            'f': misc.fill,
-            'l': lambda x: x.lower(),
-            'u': lambda x: x.upper(),
-            't': string.capwords, # for [t]itlecase
-        }
-
-        for c in conversion_mapping:
+        for c in self.conversions:
             if c in spec:
-                field = conversion_mapping[c](field)
+                field = self.conversions[c](field)
 
         return field
+
+    def get_specs(self, field):
+        """
+        takes a format string, returns stripped field, conversion spec, and
+        format spec
+        only a 2-tuple of field and conversion for now
+        use format(...) for formatting
+        """
+
+        field = field.strip()
+
+        # if the very last character is ! it's not a conversion spec
+        if '!' in field and field[-1] != '!':
+            # possible conversion spec
+            for i, c in enumerate(reversed(field)):
+                cp = ord(c)
+                # must be within a-z or A-Z or 0-9
+                if cp == 0x21: #!
+                    # ! followed by valid alphanumer sequence
+                    inx = len(field) - i - 1
+                    # + 1 to cut out `!`
+                    return field[:inx], field[inx + 1:]
+                elif not (
+                        (0x30 <= cp <= 0x39) or
+                        (0x41 <= cp <= 0x5a) or
+                        (0x61 <= cp <= 0x7a)
+                    ):
+                    # invalid
+                    break
+        return field, ''
 
     def multiline_eval(self, expr, context):
         """
@@ -144,26 +166,24 @@ class ExtendedFormatter():
     def parse_field(self, field):
         field_txt = ''
 
-        if field is not None:
-            try:
-                field_txt = self.multiline_eval(field,
-                    self.env # locals
-                )
-            except NameError as e:
-                raise NameError(' '.join(e.args) + '\nEnvironment: \n' +
-                    repr(self.env.keys()) + '\nFormat string:\n' + field) from None
-            except SyntaxError:
-                raise SyntaxError('Invalid format string: ' + field) from None
+        field, conversion = self.get_specs(field)
+
+        try:
+            field_txt = self.multiline_eval(
+                field,
+                self.env # locals
+            )
+        except NameError as e:
+            raise NameError(' '.join(e.args) + '\nEnvironment: \n' +
+                repr(self.env.keys()) + '\nFormat string:\n' + field)
+        except SyntaxError:
+            raise SyntaxError('Invalid format string: ' + field)
+
+        field_txt = self.convert_field(field_txt, conversion)
 
         return str(field_txt)
 
-    def format_and_detect(self, orig_txt):
-        """like format() but also returns a true/false value noting whether any
-        replacements were detected / made
-
-        useful for recursion, don't call it directly
-
-        this recurses!"""
+    def mainformat(self, orig_txt):
         ret = [] # list of characters / tokens
 
         parser = ExtendedFormatParser()
@@ -178,7 +198,6 @@ class ExtendedFormatter():
                 else:
                     # format string, start parsing as code
                     parsed = parser.feed(orig_txt[i:])
-                    # print('parsed as:', parsed[0])
                     ret.append(self.parse_field(parsed[0]))
                     [next(txtiter) for x in range(parsed[1])]
             elif c == '}':
@@ -204,7 +223,7 @@ class ExtendedFormatter():
 
         orig_txt = '\n'.join(txt) if isinstance(txt, list) else txt
 
-        ret = self.format_and_detect(orig_txt)
+        ret = self.mainformat(orig_txt)
 
         self.restore_env()
 
