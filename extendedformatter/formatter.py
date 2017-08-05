@@ -128,7 +128,7 @@ class ExtendedFormatter():
                 )
             except NameError as e:
                 raise NameError(' '.join(e.args) + '\nEnvironment: \n' +
-                    repr(self.env.keys())) from None
+                    repr(self.env.keys()) + '\nFormat string:\n' + field) from None
             except SyntaxError:
                 raise SyntaxError('Invalid format string: ' + field) from None
 
